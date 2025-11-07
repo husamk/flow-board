@@ -3,10 +3,16 @@ import { onAuthStateChanged } from 'firebase/auth'
 import { auth } from '@/lib/firebase'
 import { useAuthStore } from '@/store/auth'
 
-export const useAuthListener = () => {
+export function useAuthListener() {
   const setUser = useAuthStore((s) => s.setUser)
+
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (user) => setUser(user ?? null))
-    return () => unsub()
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      setUser(firebaseUser)
+    })
+
+    return () => {
+      unsubscribe()
+    }
   }, [setUser])
 }

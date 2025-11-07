@@ -1,10 +1,32 @@
 import google from '@/assets/google.svg'
-import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth'
+import { GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth'
 import { auth } from '@/lib/firebase'
+import { useAuthStore } from '@/store/auth'
+import { useRouter } from '@tanstack/react-router'
+import { useEffect } from 'react'
 
 export function SignIn() {
-  const provider = new GoogleAuthProvider()
-  const handleLogin = async () => await signInWithPopup(auth, provider)
+  const user = useAuthStore((s) => s.user)
+  const router = useRouter()
+
+  const handleLogin = async () => {
+    const provider = new GoogleAuthProvider()
+    provider.setCustomParameters({
+      prompt: 'select_account',
+    })
+    await signInWithPopup(auth, provider)
+  }
+
+  const logout = async () => {
+    await signOut(auth)
+    useAuthStore.getState().logout()
+  }
+
+  useEffect(() => {
+    if (user) {
+      router.navigate({ to: '/' })
+    }
+  }, [user, router])
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">

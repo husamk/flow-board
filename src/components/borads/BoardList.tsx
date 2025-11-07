@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { useBoardsStore } from '@/store/boards'
 import { useAuthStore } from '@/store/auth'
 import { Link } from '@tanstack/react-router'
+import { signOut } from 'firebase/auth'
+import { auth } from '@/lib/firebase'
 
 export function BoardList() {
   const [boardName, setBoardName] = useState('')
@@ -9,7 +11,11 @@ export function BoardList() {
   const addBoard = useBoardsStore((s) => s.addBoard)
   const deleteBoard = useBoardsStore((s) => s.deleteBoard)
   const user = useAuthStore((s) => s.user)
-  const logout = useAuthStore((s) => s.logout)
+
+  const logout = async () => {
+    await signOut(auth)
+    useAuthStore.getState().logout()
+  }
 
   const handleAdd = () => {
     if (boardName.trim() && user) {

@@ -1,27 +1,53 @@
-import { describe, it, expect, beforeEach } from 'vitest'
-import { useBoardsStore } from '@/store/boards.ts'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { useBoardsStore } from './boards'
 
-describe('Boards Store', () => {
+vi.mock('localforage', () => {
+  const store: Record<string, any> = {}
+  return {
+    setItem: async (key: string, value: any) => {
+      store[key] = value
+      return value
+    },
+    getItem: async (key: string) => store[key],
+    removeItem: async (key: string) => delete store[key],
+    clear: async () => Object.keys(store).forEach((k) => delete store[k]),
+  }
+})
+
+describe('useBoardsStore', () => {
   beforeEach(() => {
     useBoardsStore.setState({ boards: [] })
   })
 
-  it('should add a new board', () => {
-    const addBoard = useBoardsStore.getState().addBoard
-    addBoard('My Test Board', 'user123')
+  it('adds a new board', () => {
+    const { addBoard } = useBoardsStore.getState()
+    addBoard('Project Alpha', 'user123')
 
     const boards = useBoardsStore.getState().boards
     expect(boards).toHaveLength(1)
-    expect(boards[0].name).toBe('My Test Board')
+    expect(boards[0].name).toBe('Project Alpha')
     expect(boards[0].ownerId).toBe('user123')
   })
 
-  it('should delete a board', () => {
+  it('deletes a board by ID', () => {
     const { addBoard, deleteBoard } = useBoardsStore.getState()
-    addBoard('Temp Board', 'user456')
+    addBoard('To Delete', 'user456')
     const boardId = useBoardsStore.getState().boards[0].id
 
     deleteBoard(boardId)
-    expect(useBoardsStore.getState().boards).toHaveLength(0)
+    const boards = useBoardsStore.getState().boards
+    expect(boards).toHaveLength(0)
+  })
+
+  it('does not delete other boards', () => {
+    const { addBoard, deleteBoard } = useBoardsStore.getState()
+    addBoard('Keep Me', 'user1')
+    addBoard('Remove Me', 'user2')
+    const removeId = useBoardsStore.getState().boards.find((b) => b.name === 'Remove Me')!.id
+
+    deleteBoard(removeId)
+    const boards = useBoardsStore.getState().boards
+    expect(boards).toHaveLength(1)
+    expect(boards[0].name).toBe('Keep Me')
   })
 })

@@ -1,6 +1,9 @@
 import { useState } from 'react'
 import { shallow } from 'zustand/shallow'
 import { useCardsStore } from '@/store/cards'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Card, CardAction, CardDescription, CardHeader, CardTitle } from '@/components/ui/card.tsx'
 
 export function CardList({ columnId }: { columnId: string }) {
   const [title, setTitle] = useState('')
@@ -19,34 +22,40 @@ export function CardList({ columnId }: { columnId: string }) {
   }
 
   return (
-    <div>
+    <div className="flex justify-between items-center flex-col gap-3">
       {cards.map((card) => (
-        <div
-          key={card.id}
-          className="bg-white border rounded p-2 mb-2 shadow-sm flex justify-between items-center"
-        >
-          <span>{card.title}</span>
-          <button
-            onClick={() => deleteCard(card.id)}
-            className="text-xs text-red-500 hover:text-red-600"
-          >
-            ×
-          </button>
-        </div>
+        <Card className="w-full max-w-sm">
+          <CardHeader>
+            <CardTitle>{card.title}</CardTitle>
+            <CardDescription>{card.description || 'No description provided.'}</CardDescription>
+            <CardAction>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-xs text-red-500 hover:text-red-600 cursor-pointer"
+                onClick={() => deleteCard(card.id)}
+              >
+                ×
+              </Button>
+            </CardAction>
+          </CardHeader>
+        </Card>
       ))}
-      <input
+
+      <Input
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
         placeholder="New card"
-        className="border rounded px-2 py-1 w-full mb-2"
+        className="w-full mb-2"
       />
-      <button
+
+      <Button
         onClick={handleAdd}
-        className="w-full bg-green-600 text-white py-1 rounded hover:bg-green-700"
+        className="w-full bg-green-600 text-white hover:bg-green-700 cursor-pointer"
       >
         Add Card
-      </button>
+      </Button>
     </div>
   )
 }

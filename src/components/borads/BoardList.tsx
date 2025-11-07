@@ -4,6 +4,8 @@ import { useAuthStore } from '@/store/auth'
 import { Link } from '@tanstack/react-router'
 import { signOut } from 'firebase/auth'
 import { auth } from '@/lib/firebase'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 
 export function BoardList() {
   const [boardName, setBoardName] = useState('')
@@ -27,28 +29,25 @@ export function BoardList() {
   return (
     <div className="relative max-w-md mx-auto space-y-6 mt-6">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-bold text-blue-600">Your Boards</h2>
-        <button
-          onClick={logout}
-          className="text-sm px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
-        >
+        <h2 className="text-2xl font-bold text-blue-600 ">Your Boards</h2>
+        <Button onClick={logout} variant="destructive">
           Logout
-        </button>
+        </Button>
       </div>
 
       <div className="flex gap-2">
-        <input
+        <Input
           value={boardName}
           onChange={(e) => setBoardName(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') handleAdd()
+          }}
           placeholder="New board name"
-          className="border rounded px-3 py-2 flex-grow focus:ring-2 focus:ring-blue-500"
+          className="flex-grow"
         />
-        <button
-          onClick={handleAdd}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors"
-        >
+        <Button onClick={handleAdd} variant="outline">
           Add
-        </button>
+        </Button>
       </div>
 
       <ul className="divide-y border rounded shadow-sm bg-white">
@@ -67,12 +66,14 @@ export function BoardList() {
               >
                 {b.name}
               </Link>
-              <button
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => deleteBoard(b.id)}
-                className="text-sm text-red-600 hover:text-red-700"
+                className="text-red-600 hover:text-red-700 cursor-pointer"
               >
                 Delete
-              </button>
+              </Button>
             </li>
           ))
         )}

@@ -1,17 +1,21 @@
 import { useState } from 'react'
+import { shallow } from 'zustand/shallow'
 import { useCardsStore } from '@/store/cards'
 
 export function CardList({ columnId }: { columnId: string }) {
   const [title, setTitle] = useState('')
-  const cards = useCardsStore((s) => s.cards.filter((c) => c.columnId === columnId))
+
+  const allCards = useCardsStore((s) => s.cards, shallow)
   const addCard = useCardsStore((s) => s.addCard)
   const deleteCard = useCardsStore((s) => s.deleteCard)
 
+  const cards = allCards.filter((c) => c.columnId === columnId)
+
   const handleAdd = () => {
-    if (title.trim()) {
-      addCard(columnId, title)
-      setTitle('')
-    }
+    const trimmed = title.trim()
+    if (!trimmed) return
+    addCard(columnId, trimmed)
+    setTitle('')
   }
 
   return (
@@ -33,6 +37,7 @@ export function CardList({ columnId }: { columnId: string }) {
       <input
         value={title}
         onChange={(e) => setTitle(e.target.value)}
+        onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
         placeholder="New card"
         className="border rounded px-2 py-1 w-full mb-2"
       />

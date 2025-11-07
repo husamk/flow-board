@@ -1,11 +1,17 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
+import { shallow } from 'zustand/shallow'
 import { useColumnsStore } from '@/store/columns'
 import { CardList } from '@/components/columns/CardList'
 
 export function ColumnList({ boardId }: { boardId: string }) {
   const [title, setTitle] = useState('')
-  const columns = useColumnsStore((s) => s.columns.filter((c) => c.boardId === boardId))
+  const allColumns = useColumnsStore((s) => s.columns, shallow)
   const addColumn = useColumnsStore((s) => s.addColumn)
+
+  const columns = useMemo(
+    () => allColumns.filter((c) => c.boardId === boardId),
+    [allColumns, boardId]
+  )
 
   const handleAdd = () => {
     if (title.trim()) {
@@ -27,6 +33,11 @@ export function ColumnList({ boardId }: { boardId: string }) {
         <input
           value={title}
           onChange={(e) => setTitle(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              handleAdd()
+            }
+          }}
           placeholder="New column"
           className="border rounded px-2 py-1 w-full mb-2"
         />

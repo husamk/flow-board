@@ -1,27 +1,31 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
 import './App.css'
+import { SignIn } from './components/auth/SignIn'
+import { useAuthStore } from './store/auth'
+import { useAuthListener } from './hooks/useAuthListener'
 
 function App() {
-  const [count, setCount] = useState(0)
+  useAuthListener()
+  const user = useAuthStore((s) => s.user)
+  const logout = useAuthStore((s) => s.logout)
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>count is {count}</button>
-      </div>
-      <p className="read-the-docs">Click on the Vite and React logos to learn more</p>
-    </>
+    <div className="app-container">
+      <h1 className="app-title">FlowBoard</h1>
+
+      {!user ? (
+        <SignIn />
+      ) : (
+        <div className="text-center">
+          <p className="mb-4">Welcome, {user.displayName}</p>
+          <button
+            onClick={logout}
+            className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
+          >
+            Sign Out
+          </button>
+        </div>
+      )}
+    </div>
   )
 }
 

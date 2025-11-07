@@ -24,7 +24,7 @@ export function CardList({ columnId }: { columnId: string }) {
   return (
     <div className="flex justify-between items-center flex-col gap-3">
       {cards.map((card) => (
-        <Card className="w-full max-w-sm">
+        <Card key={card.id} className="w-full max-w-sm">
           <CardHeader>
             <CardTitle>{card.title}</CardTitle>
             <CardDescription>{card.description || 'No description provided.'}</CardDescription>

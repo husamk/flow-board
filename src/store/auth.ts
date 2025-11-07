@@ -1,5 +1,6 @@
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { persist, createJSONStorage } from 'zustand/middleware'
+import localforage from 'localforage'
 import type { User } from 'firebase/auth'
 
 interface AuthState {
@@ -15,6 +16,9 @@ export const useAuthStore = create<AuthState>()(
       setUser: (user) => set({ user }),
       logout: () => set({ user: null }),
     }),
-    { name: 'auth-storage' } // saved in localStorage/IndexedDB
+    {
+      name: 'auth-storage',
+      storage: createJSONStorage(() => localforage),
+    }
   )
 )

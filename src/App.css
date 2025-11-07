@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 .app-container {
   @apply min-h-screen flex flex-col items-center justify-center bg-gray-100;

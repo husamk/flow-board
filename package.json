@@ -7,7 +7,11 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "format": "prettier --write .",
+    "prepare": "husky",
+    "preview": "vite preview",
+    "test": "vitest --run",
+    "test:watch": "vitest --watch"
   },
   "dependencies": {
     "@tanstack/react-router": "^1.134.12",
@@ -34,7 +38,9 @@
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.22",
     "globals": "^16.4.0",
+    "husky": "^9.1.7",
     "jsdom": "^27.1.0",
+    "lint-staged": "^16.2.6",
     "prettier": "^3.6.2",
     "shadcn-ui": "^0.9.5",
     "tailwindcss": "^4.1.16",
@@ -44,5 +50,10 @@
     "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^4.0.7"
   },
-  "packageManager": "yarn@4.10.3"
+  "packageManager": "yarn@4.10.3",
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx,css,scss,md,json}": [
+      "prettier --write"
+    ]
+  }
 }

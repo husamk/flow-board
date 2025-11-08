@@ -1,28 +1,37 @@
-import { useState, useMemo } from 'react'
-import { shallow } from 'zustand/shallow'
-import { useColumnsStore } from '@/store/columns'
-import { CardList } from '@/components/columns/CardList'
-import { useRouter } from '@tanstack/react-router'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { useState, useMemo, useEffect } from 'react';
+import { useColumnsStore } from '@/store/columns';
+import { CardList } from '@/components/columns/CardList';
+import { useRouter } from '@tanstack/react-router';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import type { Column } from '@/types/column';
+import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 
-export function ColumnList({ boardId }: { boardId: string }) {
-  const [title, setTitle] = useState('')
-  const allColumns = useColumnsStore((s) => s.columns, shallow)
-  const addColumn = useColumnsStore((s) => s.addColumn)
-  const router = useRouter()
+export function ColumnList({ boardId }: { boardId: string | undefined }) {
+  const [title, setTitle] = useState('');
+  const addColumn = useColumnsStore((s) => s.addColumn);
+  const syncColumns = useColumnsStore((s) => s.syncColumns);
 
-  const columns = useMemo(
-    () => allColumns.filter((c) => c.boardId === boardId),
-    [allColumns, boardId]
-  )
+  const router = useRouter();
+  const online = useNetworkStatus();
+
+  useEffect(() => {
+    if (boardId && online) {
+      syncColumns(boardId);
+    }
+  }, [online, boardId]);
+
+  const columns: Column[] = useMemo(() => {
+    const cols = useColumnsStore.getState().getActiveColumns(boardId);
+    return cols.filter((c) => c.boardId === boardId);
+  }, [boardId, useColumnsStore((s) => s.columns)]);
 
   const handleAdd = () => {
-    if (title.trim()) {
-      addColumn(boardId, title)
-      setTitle('')
+    if (title.trim() && boardId) {
+      addColumn(boardId, title);
+      setTitle('');
     }
-  }
+  };
 
   return (
     <div className="flex gap-4 overflow-x-auto p-2">
@@ -39,7 +48,7 @@ export function ColumnList({ boardId }: { boardId: string }) {
       {columns.map((col) => (
         <div key={col.id} className="w-72 bg-gray-50 border rounded-lg p-3 flex-shrink-0">
           <h3 className="font-semibold mb-2">{col.title}</h3>
-          <CardList columnId={col.id} />
+          <CardList boardId={col.boardId} columnId={col.id} />
         </div>
       ))}
 
@@ -48,7 +57,7 @@ export function ColumnList({ boardId }: { boardId: string }) {
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === 'Enter') handleAdd()
+            if (e.key === 'Enter') handleAdd();
           }}
           placeholder="New column"
           className="w-full mb-2"
@@ -58,5 +67,5 @@ export function ColumnList({ boardId }: { boardId: string }) {
         </Button>
       </div>
     </div>
-  )
+  );
 }

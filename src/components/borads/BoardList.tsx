@@ -1,30 +1,42 @@
-import { useState } from 'react'
-import { useBoardsStore } from '@/store/boards'
-import { useAuthStore } from '@/store/auth'
-import { Link } from '@tanstack/react-router'
-import { signOut } from 'firebase/auth'
-import { auth } from '@/lib/firebase'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { useState, useEffect, useMemo } from 'react';
+import { useNetworkStatus } from '@/hooks/useNetworkStatus';
+import { useBoardsStore } from '@/store/boards';
+import { useAuthStore } from '@/store/auth';
+import { Link } from '@tanstack/react-router';
+import { signOut } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { deleteBoardCascade } from '@/utils/deleteBoardCascade';
 
 export function BoardList() {
-  const [boardName, setBoardName] = useState('')
-  const boards = useBoardsStore((s) => s.boards)
-  const addBoard = useBoardsStore((s) => s.addBoard)
-  const deleteBoard = useBoardsStore((s) => s.deleteBoard)
-  const user = useAuthStore((s) => s.user)
+  const [boardName, setBoardName] = useState('');
+  const boards = useMemo(
+    () => useBoardsStore.getState().getActiveBoards(),
+    [useBoardsStore((s) => s.boards)]
+  );
+  const addBoard = useBoardsStore((s) => s.addBoard);
+  const user = useAuthStore((s) => s.user);
+  const online = useNetworkStatus();
+  const syncBoards = useBoardsStore((s) => s.syncBoards);
+
+  useEffect(() => {
+    if (online) {
+      syncBoards();
+    }
+  }, [online]);
 
   const logout = async () => {
-    await signOut(auth)
-    useAuthStore.getState().logout()
-  }
+    await signOut(auth);
+    useAuthStore.getState().logout();
+  };
 
   const handleAdd = () => {
     if (boardName.trim() && user) {
-      addBoard(boardName, user.uid)
-      setBoardName('')
+      addBoard(boardName, user.uid);
+      setBoardName('');
     }
-  }
+  };
 
   return (
     <div className="relative max-w-md mx-auto space-y-6 mt-6">
@@ -40,7 +52,7 @@ export function BoardList() {
           value={boardName}
           onChange={(e) => setBoardName(e.target.value)}
           onKeyDown={(e) => {
-            if (e.key === 'Enter') handleAdd()
+            if (e.key === 'Enter') handleAdd();
           }}
           placeholder="New board name"
           className="flex-grow"
@@ -69,7 +81,7 @@ export function BoardList() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => deleteBoard(b.id)}
+                onClick={() => deleteBoardCascade(b.id)}
                 className="text-red-600 hover:text-red-700 cursor-pointer"
               >
                 Delete
@@ -79,5 +91,5 @@ export function BoardList() {
         )}
       </ul>
     </div>
-  )
+  );
 }

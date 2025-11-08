@@ -1,8 +1,9 @@
 export interface Board {
-  id: string
-  name: string
-  createdAt: string
-  updatedAt: string
-  ownerId: string
-  sharedWith?: string[]
+  id: string;
+  name: string;
+  ownerId: string;
+  sharedWith?: string[];
+  createdAt: string;
+  updatedAt: string;
+  deletedAt?: string;
 }

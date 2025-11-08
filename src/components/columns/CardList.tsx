@@ -1,25 +1,41 @@
-import { useState } from 'react'
-import { shallow } from 'zustand/shallow'
-import { useCardsStore } from '@/store/cards'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Card, CardAction, CardDescription, CardHeader, CardTitle } from '@/components/ui/card.tsx'
+import { useState, useEffect, useMemo } from 'react';
+import { useCardsStore } from '@/store/cards';
+import { useNetworkStatus } from '@/hooks/useNetworkStatus';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import type { Card as CardItem } from '@/types/card';
+import { Card, CardAction, CardDescription, CardHeader, CardTitle } from '@/components/ui/card.tsx';
 
-export function CardList({ columnId }: { columnId: string }) {
-  const [title, setTitle] = useState('')
+interface CardListProps {
+  boardId: string;
+  columnId: string;
+}
 
-  const allCards = useCardsStore((s) => s.cards, shallow)
-  const addCard = useCardsStore((s) => s.addCard)
-  const deleteCard = useCardsStore((s) => s.deleteCard)
+export function CardList({ boardId, columnId }: CardListProps) {
+  const [title, setTitle] = useState('');
 
-  const cards = allCards.filter((c) => c.columnId === columnId)
+  const addCard = useCardsStore((s) => s.addCard);
+  const deleteCard = useCardsStore((s) => s.deleteCard);
+  const syncCards = useCardsStore((s) => s.syncCards);
+  const online = useNetworkStatus();
+
+  const cards: CardItem[] = useMemo(
+    () => useCardsStore.getState().getActiveCards(boardId, columnId),
+    [boardId, columnId, useCardsStore((s) => s.cards)]
+  );
+
+  useEffect(() => {
+    if (boardId && columnId && online) {
+      syncCards(boardId, columnId);
+    }
+  }, [boardId, columnId, online]);
 
   const handleAdd = () => {
-    const trimmed = title.trim()
-    if (!trimmed) return
-    addCard(columnId, trimmed)
-    setTitle('')
-  }
+    const trimmed = title.trim();
+    if (!trimmed) return;
+    addCard(boardId, columnId, trimmed);
+    setTitle('');
+  };
 
   return (
     <div className="flex justify-between items-center flex-col gap-3">
@@ -33,7 +49,8 @@ export function CardList({ columnId }: { columnId: string }) {
                 variant="ghost"
                 size="sm"
                 className="text-xs text-red-500 hover:text-red-600 cursor-pointer"
-                onClick={() => deleteCard(card.id)}
+                onClick={() => deleteCard(card.id, boardId, columnId)}
+                title="Delete card"
               >
                 ×
               </Button>
@@ -57,5 +74,5 @@ export function CardList({ columnId }: { columnId: string }) {
         Add Card
       </Button>
     </div>
-  )
+  );
 }

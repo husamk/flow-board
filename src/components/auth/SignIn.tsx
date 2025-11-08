@@ -1,32 +1,27 @@
-import google from '@/assets/google.svg'
-import { GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth'
-import { auth } from '@/lib/firebase'
-import { useAuthStore } from '@/store/auth'
-import { useRouter } from '@tanstack/react-router'
-import { useEffect } from 'react'
+import google from '@/assets/google.svg';
+import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
+import { useAuthStore } from '@/store/auth';
+import { useRouter } from '@tanstack/react-router';
+import { useEffect } from 'react';
 
 export function SignIn() {
-  const user = useAuthStore((s) => s.user)
-  const router = useRouter()
+  const user = useAuthStore((s) => s.user);
+  const router = useRouter();
 
   const handleLogin = async () => {
-    const provider = new GoogleAuthProvider()
+    const provider = new GoogleAuthProvider();
     provider.setCustomParameters({
       prompt: 'select_account',
-    })
-    await signInWithPopup(auth, provider)
-  }
-
-  const logout = async () => {
-    await signOut(auth)
-    useAuthStore.getState().logout()
-  }
+    });
+    await signInWithPopup(auth, provider);
+  };
 
   useEffect(() => {
     if (user) {
-      router.navigate({ to: '/' })
+      router.navigate({ to: '/' });
     }
-  }, [user, router])
+  }, [user, router]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -61,5 +56,5 @@ export function SignIn() {
         </div>
       </div>
     </div>
-  )
+  );
 }

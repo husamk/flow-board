@@ -4,7 +4,7 @@ import localforage from 'localforage';
 import type { Card } from '@/types/card';
 import { nanoid } from 'nanoid';
 import { db } from '@/lib/firebase';
-import { collection, doc, addDoc, updateDoc, getDocs } from 'firebase/firestore';
+import { collection, doc, updateDoc, getDocs, setDoc } from 'firebase/firestore';
 import { usePendingQueue } from '@/store/pendingQueue';
 import { isOnline } from '@/utils/network';
 
@@ -77,7 +77,8 @@ export const useCardsStore = create<CardsState>()(
           }
 
           try {
-            await addDoc(collection(db, 'boards', boardId, 'columns', columnId, 'cards'), newCard);
+            const ref = doc(db, 'boards', boardId, 'columns', columnId, 'cards', newCard.id);
+            await setDoc(ref, newCard);
           } catch (error) {
             console.error('[addCard] Firestore error:', error);
           }

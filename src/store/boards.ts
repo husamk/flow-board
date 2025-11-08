@@ -4,7 +4,7 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 import localforage from 'localforage';
 import type { Board } from '@/types/board';
 import { db } from '@/lib/firebase';
-import { addDoc, collection, doc, getDocs, updateDoc } from 'firebase/firestore';
+import { collection, doc, getDocs, updateDoc, setDoc } from 'firebase/firestore';
 import { usePendingQueue } from '@/store/pendingQueue';
 import { isOnline } from '@/utils/network';
 
@@ -51,7 +51,8 @@ export const useBoardsStore = create<BoardsState>()(
               });
               return;
             }
-            await addDoc(collection(db, 'boards'), newBoard);
+            const ref = doc(db, 'boards', newBoard.id);
+            await setDoc(ref, newBoard);
           } catch (error) {
             console.error('[addBoard] Firestore error:', error);
           }

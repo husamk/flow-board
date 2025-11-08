@@ -4,7 +4,7 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 import type { Column } from '@/types/column';
 import localforage from 'localforage';
 import { db } from '@/lib/firebase';
-import { addDoc, collection, doc, getDocs, updateDoc } from 'firebase/firestore';
+import { collection, doc, getDocs, updateDoc, setDoc } from 'firebase/firestore';
 import { usePendingQueue } from '@/store/pendingQueue';
 import { isOnline } from '@/utils/network';
 
@@ -30,7 +30,9 @@ export const useColumnsStore = create<ColumnsState>()(
           if (!boardId) return [];
           const columnsObj = get().columns;
           const cols = columnsObj[boardId] || [];
-          return cols.filter((c) => !c.deletedAt);
+          return cols
+            .filter((c) => !c.deletedAt)
+            .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
         },
 
         addColumn: async (boardId, title) => {
@@ -62,7 +64,8 @@ export const useColumnsStore = create<ColumnsState>()(
           }
 
           try {
-            await addDoc(collection(db, 'boards', boardId, 'columns'), newColumn);
+            const ref = doc(db, 'boards', boardId, 'columns', newColumn.id);
+            await setDoc(ref, newColumn);
           } catch (error) {
             console.error('[addColumn] Firestore error:', error);
           }

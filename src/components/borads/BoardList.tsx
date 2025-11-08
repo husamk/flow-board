@@ -1,10 +1,8 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { useBoardsStore } from '@/store/boards';
 import { useAuthStore } from '@/store/auth';
 import { Link } from '@tanstack/react-router';
-import { signOut } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { deleteBoardCascade } from '@/utils/deleteBoardCascade';
@@ -26,11 +24,6 @@ export function BoardList() {
     }
   }, [online]);
 
-  const logout = async () => {
-    await signOut(auth);
-    useAuthStore.getState().logout();
-  };
-
   const handleAdd = () => {
     if (boardName.trim() && user) {
       addBoard(boardName, user.uid);
@@ -42,9 +35,6 @@ export function BoardList() {
     <div className="relative max-w-md mx-auto space-y-6 mt-6">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-2xl font-bold text-blue-600 ">Your Boards</h2>
-        <Button onClick={logout} variant="destructive">
-          Logout
-        </Button>
       </div>
 
       <div className="flex gap-2">

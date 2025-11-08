@@ -1,19 +1,23 @@
-import { create } from 'zustand'
-import { persist, createJSONStorage } from 'zustand/middleware'
-import localforage from 'localforage'
-import type { User } from 'firebase/auth'
+import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import localforage from 'localforage';
+import type { User } from 'firebase/auth';
 
 interface AuthState {
-  user: User | null
-  setUser: (user: User | null) => void
-  logout: () => void
+  user: User | null;
+  isLoading: boolean;
+  setUser: (user: User | null) => void;
+  setLoading: (loading: boolean) => void;
+  logout: () => void;
 }
 
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
       user: null,
+      isLoading: true,
       setUser: (user) => set({ user }),
+      setLoading: (loading) => set({ isLoading: loading }),
       logout: () => set({ user: null }),
     }),
     {
@@ -21,4 +25,4 @@ export const useAuthStore = create<AuthState>()(
       storage: createJSONStorage(() => localforage),
     }
   )
-)
+);

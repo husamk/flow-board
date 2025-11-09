@@ -3,7 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import localforage from 'localforage';
 import { isOnline } from '@/utils/network';
 
-type PendingActionType = 'ADD' | 'UPDATE' | 'DELETE';
+type PendingActionType = 'ADD' | 'UPDATE' | 'DELETE' | 'MOVE';
 
 export interface PendingAction {
   id: string;
@@ -105,9 +105,9 @@ async function handleColumnAction(type: PendingActionType, payload: any) {
 
 async function handleCardAction(type: PendingActionType, payload: any) {
   const { db } = await import('@/lib/firebase');
-  const { doc, setDoc, updateDoc, collection } = await import('firebase/firestore');
+  const { doc, setDoc, updateDoc, collection, deleteDoc } = await import('firebase/firestore');
 
-  const { boardId, columnId, id } = payload;
+  const { boardId, columnId, id, fromColumnId, toColumnId } = payload;
 
   if (type === 'ADD') {
     await setDoc(doc(collection(db, 'boards', boardId, 'columns', columnId, 'cards')), payload);
@@ -117,5 +117,15 @@ async function handleCardAction(type: PendingActionType, payload: any) {
     await updateDoc(doc(db, 'boards', boardId, 'columns', columnId, 'cards', id), {
       deletedAt: new Date().toISOString(),
     });
+  } else if (type === 'MOVE') {
+    const toRef = doc(db, 'boards', boardId, 'columns', toColumnId, 'cards', id);
+    await setDoc(toRef, {
+      ...payload,
+      columnId: toColumnId,
+      updatedAt: new Date().toISOString(),
+    });
+
+    const fromRef = doc(db, 'boards', boardId, 'columns', fromColumnId, 'cards', id);
+    await deleteDoc(fromRef);
   }
 }

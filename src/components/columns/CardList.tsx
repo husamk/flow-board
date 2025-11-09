@@ -1,10 +1,11 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useCardsStore } from '@/store/cards';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import type { Card as CardItem } from '@/types/card';
-import { Card, CardAction, CardDescription, CardHeader, CardTitle } from '@/components/ui/card.tsx';
+import { DraggableCard } from '@/components/columns/DraggableCard.tsx';
+import { useDroppable } from '@dnd-kit/core';
 
 interface CardListProps {
   boardId: string;
@@ -13,7 +14,6 @@ interface CardListProps {
 
 export function CardList({ boardId, columnId }: CardListProps) {
   const [title, setTitle] = useState('');
-
   const addCard = useCardsStore((s) => s.addCard);
   const deleteCard = useCardsStore((s) => s.deleteCard);
   const syncCards = useCardsStore((s) => s.syncCards);
@@ -23,6 +23,13 @@ export function CardList({ boardId, columnId }: CardListProps) {
     () => useCardsStore.getState().getActiveCards(boardId, columnId),
     [boardId, columnId, useCardsStore((s) => s.cards)]
   );
+
+  const { setNodeRef } = useDroppable({
+    id: columnId,
+    data: {
+      columnId,
+    },
+  });
 
   useEffect(() => {
     if (boardId && columnId && online) {
@@ -38,25 +45,13 @@ export function CardList({ boardId, columnId }: CardListProps) {
   };
 
   return (
-    <div className="flex justify-between items-center flex-col gap-3">
+    <div ref={setNodeRef} className="flex justify-between items-center flex-col gap-3">
       {cards.map((card) => (
-        <Card key={card.id} className="w-full max-w-sm">
-          <CardHeader>
-            <CardTitle>{card.title}</CardTitle>
-            <CardDescription>{card.description || 'No description provided.'}</CardDescription>
-            <CardAction>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-xs text-red-500 hover:text-red-600 cursor-pointer"
-                onClick={() => deleteCard(card.id, boardId, columnId)}
-                title="Delete card"
-              >
-                ×
-              </Button>
-            </CardAction>
-          </CardHeader>
-        </Card>
+        <DraggableCard
+          key={card.id}
+          card={card}
+          onDelete={() => deleteCard(card.id, boardId, columnId)}
+        />
       ))}
 
       <Input

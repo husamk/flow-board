@@ -4,13 +4,15 @@ import localforage from 'localforage';
 import type { Card } from '@/types/card';
 import { nanoid } from 'nanoid';
 import { db } from '@/lib/firebase';
-import { collection, doc, updateDoc, getDocs, setDoc } from 'firebase/firestore';
+import { collection, doc, updateDoc, getDocs, setDoc, deleteDoc } from 'firebase/firestore';
 import { usePendingQueue } from '@/store/pendingQueue';
 import { isOnline } from '@/utils/network';
 
 interface CardsState {
   cards: Record<string, Record<string, Card[]>>;
   getActiveCards: (boardId: string, columnId: string) => Card[];
+  getBoardCards: (boardId: string) => Record<string, Card[]>;
+  moveCard: (boardId: string, fromColumnId: string, toColumnId: string, cardId: string) => void;
   addCard: (
     boardId: string,
     columnId: string,
@@ -41,6 +43,80 @@ export const useCardsStore = create<CardsState>()(
           if (!boardId || !columnId) return [];
           const cards = get().cards[boardId]?.[columnId] || [];
           return cards.filter((c) => !c.deletedAt);
+        },
+
+        getBoardCards: (boardId) => {
+          if (!boardId) return {};
+          const columns = get().cards[boardId] || {};
+          return Object.entries(columns).reduce(
+            (acc, [columnId, cards]) => {
+              acc[columnId] = cards.filter((c) => !c.deletedAt);
+              return acc;
+            },
+            {} as Record<string, Card[]>
+          );
+        },
+
+        moveCard: async (boardId, fromColumnId, toColumnId, cardId) => {
+          if (!boardId || !fromColumnId || !toColumnId || !cardId) return;
+          let movedCard: Card | undefined;
+
+          set((state) => {
+            const boardCards = state.cards[boardId] ?? {};
+            const fromCards = boardCards[fromColumnId] ?? [];
+            const toCards = boardCards[toColumnId] ?? [];
+
+            const updatedFrom = fromCards.filter((c) => {
+              if (c.id === cardId) {
+                movedCard = {
+                  ...c,
+                  columnId: toColumnId,
+                  updatedAt: new Date().toISOString(),
+                };
+                return false;
+              }
+              return true;
+            });
+
+            if (!movedCard) {
+              return state;
+            }
+
+            const updatedTo = [...toCards, movedCard];
+
+            return {
+              cards: {
+                ...state.cards,
+                [boardId]: {
+                  ...boardCards,
+                  [fromColumnId]: updatedFrom,
+                  [toColumnId]: updatedTo,
+                },
+              },
+            };
+          });
+
+          if (!isOnline()) {
+            enqueue({
+              id: nanoid(),
+              type: 'MOVE',
+              entity: 'card',
+              payload: { boardId, fromColumnId, toColumnId, cardId },
+              timestamp: Date.now(),
+            });
+            return;
+          }
+          try {
+            const toRef = doc(db, 'boards', boardId, 'columns', toColumnId, 'cards', cardId);
+            if (movedCard) {
+              await setDoc(toRef, movedCard);
+            }
+
+            const fromRef = doc(db, 'boards', boardId, 'columns', fromColumnId, 'cards', cardId);
+            await deleteDoc(fromRef);
+          } catch (error) {
+            console.error('[moveCard] Firestore error:', error);
+          }
         },
 
         addCard: async (boardId, columnId, title, description = '') => {

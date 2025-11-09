@@ -23,14 +23,14 @@ export function BoardList() {
   const syncBoards = useBoardsStore((s) => s.syncBoards);
 
   useEffect(() => {
-    if (online) {
-      syncBoards();
+    if (online && user) {
+      syncBoards(user.uid);
     }
-  }, [online]);
+  }, [online, !!user]);
 
   const handleAdd = () => {
     if (boardName.trim() && user) {
-      addBoard(boardName, user.uid);
+      addBoard(boardName, user.uid, user.displayName || 'Anonymous');
       setBoardName('');
     }
   };

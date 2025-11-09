@@ -11,12 +11,15 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ArrowLeft } from 'lucide-react';
 import { useAuthStore } from '@/store/auth.ts';
 import { useRouter, useRouterState } from '@tanstack/react-router';
+import { useNetworkStatus } from '@/hooks/useNetworkStatus';
+import { cn } from '@/lib/utils';
 
 export const Header = () => {
   const router = useRouter();
   const { location } = useRouterState();
   const showBackButton = location.pathname !== '/';
   const user = useAuthStore((s) => s.user);
+  const online = useNetworkStatus();
 
   const handleLogout = async () => {
     await signOut(auth);
@@ -40,25 +43,31 @@ export const Header = () => {
         )}
       </div>
 
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <button className="flex items-center gap-2 focus:outline-none">
-            <Avatar className="w-8 h-8 border">
-              <AvatarImage src={user?.photoURL || ''} alt={user?.displayName || 'User'} />
-              <AvatarFallback>{user?.displayName?.[0]?.toUpperCase() || '?'}</AvatarFallback>
-            </Avatar>
-          </button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-fit">
-          <div className="px-3 py-2 border-b">
-            <p className="text-sm font-medium">{user?.displayName}</p>
-            <p className="text-xs text-gray-500">{user?.email}</p>
-          </div>
-          <DropdownMenuItem onClick={handleLogout} className="text-red-600 cursor-pointer">
-            Logout
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <div className="flex items-center gap-6">
+        <div className="flex items-center gap-1">
+          <div className={cn('w-3 h-3 rounded-full', online ? 'bg-green-500' : 'bg-gray-400')} />
+          <span className="text-xs text-gray-600 select-none">{online ? 'Online' : 'Offline'}</span>
+        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="flex items-center gap-2 focus:outline-none">
+              <Avatar className="w-8 h-8 border">
+                <AvatarImage src={user?.photoURL || ''} alt={user?.displayName || 'User'} />
+                <AvatarFallback>{user?.displayName?.[0]?.toUpperCase() || '?'}</AvatarFallback>
+              </Avatar>
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-fit">
+            <div className="px-3 py-2 border-b">
+              <p className="text-sm font-medium">{user?.displayName}</p>
+              <p className="text-xs text-gray-500">{user?.email}</p>
+            </div>
+            <DropdownMenuItem onClick={handleLogout} className="text-red-600 cursor-pointer">
+              Logout
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
     </header>
   );
 };

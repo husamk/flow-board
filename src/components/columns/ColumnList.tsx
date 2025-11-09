@@ -9,6 +9,8 @@ import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { useCardsStore } from '@/store/cards.ts';
 import type { Card as CardItem } from '@/types/card.ts';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { usePendingQueue } from '@/store/pendingQueue.ts';
+import { Spinner } from '@/components/ui/spinner.tsx';
 
 export function ColumnList({ boardId }: { boardId: string | undefined }) {
   const [title, setTitle] = useState('');
@@ -20,6 +22,8 @@ export function ColumnList({ boardId }: { boardId: string | undefined }) {
   const [editedTitle, setEditedTitle] = useState('');
 
   const online = useNetworkStatus();
+
+  const isFlushing = usePendingQueue((s) => s.isLoading);
 
   useEffect(() => {
     if (boardId && online) {
@@ -57,12 +61,15 @@ export function ColumnList({ boardId }: { boardId: string | undefined }) {
     const activeCardId = active.data.current?.cardId;
     const activeColumnId = active.data.current?.columnId;
     const overColumnId = over.data.current?.columnId;
+
+    if (activeColumnId === overColumnId || !activeCardId || !overColumnId || !activeCardId) return;
     moveCard(boardId, activeColumnId, overColumnId, activeCardId);
   };
 
   return (
     <DndContext collisionDetection={closestCorners} onDragEnd={handleDragEnd}>
-      <div className="flex gap-4 overflow-x-auto p-2">
+      <div className="flex gap-4 overflow-x-auto p-2 relative">
+        {isFlushing && <Spinner />}
         {columns.map((col) => (
           <div key={col.id} className="w-72 bg-gray-50 border rounded-lg p-3 flex-shrink-0">
             {editingColumnId === col.id ? (

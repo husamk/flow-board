@@ -15,6 +15,7 @@ export interface PendingAction {
 
 interface PendingQueueState {
   queue: PendingAction[];
+  isLoading: boolean;
   enqueue: (action: PendingAction) => void;
   dequeue: (id: string) => void;
   flush: () => Promise<void>;
@@ -24,6 +25,7 @@ export const usePendingQueue = create<PendingQueueState>()(
   persist(
     (set, get) => ({
       queue: [],
+      isLoading: false,
 
       enqueue: (action) => {
         console.info('[PendingQueue] Enqueued', action);
@@ -38,16 +40,23 @@ export const usePendingQueue = create<PendingQueueState>()(
         if (!isOnline()) return;
 
         const { queue, dequeue } = get();
-        console.info(`[PendingQueue] Flushing ${queue.length} actions...`);
+        if (queue.length === 0) return;
 
-        for (const action of queue) {
-          try {
-            await handleAction(action);
-            dequeue(action.id);
-            console.info('[PendingQueue] Flushed:', action);
-          } catch (err) {
-            console.warn('[PendingQueue] Retry later for:', action, err);
+        console.info(`[PendingQueue] Flushing ${queue.length} actions...`);
+        set({ isLoading: true });
+
+        try {
+          for (const action of queue) {
+            try {
+              await handleAction(action);
+              dequeue(action.id);
+              console.info('[PendingQueue] Flushed:', action);
+            } catch (err) {
+              console.warn('[PendingQueue] Retry later for:', action, err);
+            }
           }
+        } finally {
+          set({ isLoading: false });
         }
       },
     }),
@@ -75,10 +84,10 @@ async function handleAction(action: PendingAction) {
 
 async function handleBoardAction(type: PendingActionType, payload: any) {
   const { db } = await import('@/lib/firebase');
-  const { doc, setDoc, updateDoc, collection } = await import('firebase/firestore');
+  const { doc, setDoc, updateDoc } = await import('firebase/firestore');
 
   if (type === 'ADD') {
-    await setDoc(doc(collection(db, 'boards')), payload);
+    await setDoc(doc(db, 'boards', payload.id), payload);
   } else if (type === 'UPDATE') {
     await updateDoc(doc(db, 'boards', payload.id), payload);
   } else if (type === 'DELETE') {
@@ -88,12 +97,12 @@ async function handleBoardAction(type: PendingActionType, payload: any) {
 
 async function handleColumnAction(type: PendingActionType, payload: any) {
   const { db } = await import('@/lib/firebase');
-  const { doc, setDoc, updateDoc, collection } = await import('firebase/firestore');
+  const { doc, setDoc, updateDoc } = await import('firebase/firestore');
 
   const { boardId, id } = payload;
 
   if (type === 'ADD') {
-    await setDoc(doc(collection(db, 'boards', boardId, 'columns')), payload);
+    await setDoc(doc(db, 'boards', boardId, 'columns', id), payload);
   } else if (type === 'UPDATE') {
     await updateDoc(doc(db, 'boards', boardId, 'columns', id), payload);
   } else if (type === 'DELETE') {
@@ -105,12 +114,12 @@ async function handleColumnAction(type: PendingActionType, payload: any) {
 
 async function handleCardAction(type: PendingActionType, payload: any) {
   const { db } = await import('@/lib/firebase');
-  const { doc, setDoc, updateDoc, collection, deleteDoc } = await import('firebase/firestore');
+  const { doc, setDoc, updateDoc, deleteDoc } = await import('firebase/firestore');
 
   const { boardId, columnId, id, fromColumnId, toColumnId } = payload;
 
   if (type === 'ADD') {
-    await setDoc(doc(collection(db, 'boards', boardId, 'columns', columnId, 'cards')), payload);
+    await setDoc(doc(db, 'boards', boardId, 'columns', columnId, 'cards', id), payload);
   } else if (type === 'UPDATE') {
     await updateDoc(doc(db, 'boards', boardId, 'columns', columnId, 'cards', id), payload);
   } else if (type === 'DELETE') {
@@ -118,8 +127,7 @@ async function handleCardAction(type: PendingActionType, payload: any) {
       deletedAt: new Date().toISOString(),
     });
   } else if (type === 'MOVE') {
-    const toRef = doc(db, 'boards', boardId, 'columns', toColumnId, 'cards', id);
-    await setDoc(toRef, {
+    await setDoc(doc(db, 'boards', boardId, 'columns', toColumnId, 'cards', id), {
       ...payload,
       columnId: toColumnId,
       updatedAt: new Date().toISOString(),

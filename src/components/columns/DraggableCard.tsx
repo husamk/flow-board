@@ -1,7 +1,7 @@
 import { useDraggable } from '@dnd-kit/core';
 import { Button } from '@/components/ui/button';
 import type { Card as CardItem } from '@/types/card';
-import { Card, CardAction, CardDescription, CardHeader, CardTitle } from '@/components/ui/card.tsx';
+import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card.tsx';
 
 export function DraggableCard({ card, onDelete }: { card: CardItem; onDelete: () => void }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
@@ -23,29 +23,30 @@ export function DraggableCard({ card, onDelete }: { card: CardItem; onDelete: ()
   };
 
   return (
-    <div ref={setNodeRef} style={style} {...listeners} {...attributes}>
-      <Card
-        key={card.id}
-        className="w-full shadow-sm rounded-md bg-white border border-gray-200 hover:shadow-md transition-shadow"
+    <div className="relative w-full">
+      <div ref={setNodeRef} style={style} {...listeners} {...attributes}>
+        <Card
+          key={card.id}
+          className="w-full shadow-sm rounded-md bg-white border border-gray-200 hover:shadow-md transition-shadow"
+        >
+          <CardHeader>
+            <CardTitle className="text-sm font-semibold truncate">{card.title}</CardTitle>
+            <CardDescription className="text-xs text-gray-500 line-clamp-2">
+              {card.description || 'No description provided.'}
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+
+      <Button
+        variant="ghost"
+        size="sm"
+        className="absolute top-1 right-1 pointer-events-auto text-sm text-red-500 hover:text-red-600 cursor-pointer z-10"
+        onClick={onDelete}
+        title="Delete card"
       >
-        <CardHeader>
-          <CardTitle className="text-sm font-semibold truncate">{card.title}</CardTitle>
-          <CardDescription className="text-xs text-gray-500 line-clamp-2">
-            {card.description || 'No description provided.'}
-          </CardDescription>
-          <CardAction>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-xs text-red-500 hover:text-red-600 cursor-pointer"
-              onClick={onDelete}
-              title="Delete card"
-            >
-              ×
-            </Button>
-          </CardAction>
-        </CardHeader>
-      </Card>
+        ×
+      </Button>
     </div>
   );
 }

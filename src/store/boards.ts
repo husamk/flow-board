@@ -4,17 +4,17 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 import localforage from 'localforage';
 import type { Board } from '@/types/board';
 import { db } from '@/lib/firebase';
-import { collection, doc, getDocs, updateDoc, setDoc } from 'firebase/firestore';
+import { collection, doc, getDocs, updateDoc, setDoc, query, where } from 'firebase/firestore';
 import { usePendingQueue } from '@/store/pendingQueue';
 import { isOnline } from '@/utils/network';
 
 interface BoardsState {
   boards: Board[];
   getActiveBoards: () => Board[];
-  addBoard: (name: string, ownerId: string) => Promise<void>;
+  addBoard: (name: string, ownerId: string, ownerName: string) => Promise<void>;
   updateBoard: (id: string, name: string) => Promise<void>;
   deleteBoard: (id: string) => Promise<void>;
-  syncBoards: () => Promise<Board[]>;
+  syncBoards: (userId: string) => Promise<Board[]>;
 }
 
 export const useBoardsStore = create<BoardsState>()(
@@ -28,11 +28,18 @@ export const useBoardsStore = create<BoardsState>()(
           return get().boards.filter((b) => !b.deletedAt);
         },
 
-        addBoard: async (name, ownerId) => {
+        addBoard: async (name, ownerId, ownerName) => {
           const newBoard: Board = {
             id: nanoid(),
             name,
             ownerId,
+            members: {
+              [ownerId]: {
+                role: 'owner',
+                name: ownerName,
+                invitedAt: new Date().toISOString(),
+              },
+            },
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
           };
@@ -112,15 +119,18 @@ export const useBoardsStore = create<BoardsState>()(
           }
         },
 
-        syncBoards: async () => {
+        syncBoards: async (userId: string) => {
           try {
-            const snapshot = await getDocs(collection(db, 'boards'));
-            const remoteBoards = snapshot.docs.map(
-              (doc) => ({ id: doc.id, ...doc.data() }) as Board
-            );
+            const boardsRef = collection(db, 'boards');
+            const q = query(boardsRef, where(`members.${userId}.role`, 'in', ['owner', 'editor']));
+
+            const snapshot = await getDocs(q);
+            const remoteBoards = snapshot.docs
+              .map((doc) => ({ id: doc.id, ...doc.data() }) as Board)
+              .filter((b) => !b.deletedAt);
 
             set({ boards: remoteBoards });
-            console.info('[syncBoards] Synced from Firestore:', remoteBoards);
+            console.info('[syncBoards] Synced from Firestore for user', userId, remoteBoards);
 
             return remoteBoards;
           } catch (error) {

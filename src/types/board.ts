@@ -1,14 +1,13 @@
 export interface Member {
+  email: string;
   role: 'owner' | 'editor';
-  name: string;
-  invitedAt: string;
 }
 
 export interface Board {
   id: string;
   name: string;
   ownerId: string;
-  members: Record<string, Member>;
+  members: Member[];
   createdAt: string;
   updatedAt: string;
   deletedAt?: string;

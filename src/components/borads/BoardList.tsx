@@ -7,11 +7,13 @@ import { Link } from '@tanstack/react-router';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { deleteBoardCascade } from '@/utils/deleteBoardCascade';
+import { ShareModal } from '@/components/modals/ShareModal';
 
 export function BoardList() {
   const [boardName, setBoardName] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
+  const [selectedBoardId, setSelectedBoardId] = useState<string | null>(null);
   const boards = useMemo(
     () => useBoardsStore.getState().getActiveBoards(),
     [useBoardsStore((s) => s.boards)]
@@ -23,14 +25,14 @@ export function BoardList() {
   const syncBoards = useBoardsStore((s) => s.syncBoards);
 
   useEffect(() => {
-    if (online && user) {
-      syncBoards(user.uid);
+    if (online && user?.email) {
+      syncBoards(user.email);
     }
-  }, [online, !!user]);
+  }, [online, user?.email]);
 
   const handleAdd = () => {
     if (boardName.trim() && user) {
-      addBoard(boardName, user.uid, user.displayName || 'Anonymous');
+      addBoard(boardName, user.uid, user.email);
       setBoardName('');
     }
   };
@@ -119,6 +121,14 @@ export function BoardList() {
                 <Button
                   variant="outline"
                   size="sm"
+                  onClick={() => setSelectedBoardId(b.id)}
+                  className="text-blue-600 hover:text-blue-700 cursor-pointer"
+                >
+                  Share
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={() => deleteBoardCascade(b.id)}
                   className="text-red-600 hover:text-red-700 cursor-pointer"
                 >
@@ -129,6 +139,13 @@ export function BoardList() {
           ))
         )}
       </ul>
+      {selectedBoardId && (
+        <ShareModal
+          boardId={selectedBoardId}
+          isOpen={!!selectedBoardId}
+          onClose={() => setSelectedBoardId(null)}
+        />
+      )}
     </div>
   );
 }

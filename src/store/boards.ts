@@ -11,10 +11,12 @@ import { isOnline } from '@/utils/network';
 interface BoardsState {
   boards: Board[];
   getActiveBoards: () => Board[];
-  addBoard: (name: string, ownerId: string, ownerName: string) => Promise<void>;
+  addBoard: (name: string, ownerId: string, ownerEmail: string | null) => Promise<void>;
   updateBoard: (id: string, name: string) => Promise<void>;
   deleteBoard: (id: string) => Promise<void>;
-  syncBoards: (userId: string) => Promise<Board[]>;
+  shareBoard: (boardId: string, memberEmail: string, role: 'editor' | 'owner') => Promise<void>;
+  removeSharedMember: (boardId: string, memberEmail: string) => Promise<void>;
+  syncBoards: (userEmail: string) => Promise<Board[]>;
 }
 
 export const useBoardsStore = create<BoardsState>()(
@@ -28,18 +30,14 @@ export const useBoardsStore = create<BoardsState>()(
           return get().boards.filter((b) => !b.deletedAt);
         },
 
-        addBoard: async (name, ownerId, ownerName) => {
+        addBoard: async (name, ownerId, ownerEmail) => {
+          if (!ownerEmail || !ownerId) return;
+
           const newBoard: Board = {
             id: nanoid(),
             name,
             ownerId,
-            members: {
-              [ownerId]: {
-                role: 'owner',
-                name: ownerName,
-                invitedAt: new Date().toISOString(),
-              },
-            },
+            members: [{ email: ownerEmail, role: 'owner' }],
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
           };
@@ -119,18 +117,84 @@ export const useBoardsStore = create<BoardsState>()(
           }
         },
 
-        syncBoards: async (userId: string) => {
-          try {
-            const boardsRef = collection(db, 'boards');
-            const q = query(boardsRef, where(`members.${userId}.role`, 'in', ['owner', 'editor']));
+        shareBoard: async (boardId, memberEmail, role) => {
+          const updatedAt = new Date().toISOString();
+          set((state) => ({
+            boards: state.boards.map((b) =>
+              b.id === boardId
+                ? {
+                    ...b,
+                    members: [
+                      ...b.members.filter((m) => m.email !== memberEmail),
+                      { email: memberEmail, role },
+                    ],
+                    updatedAt,
+                  }
+                : b
+            ),
+          }));
 
-            const snapshot = await getDocs(q);
-            const remoteBoards = snapshot.docs
+          const updated = get().boards.find((b) => b.id === boardId);
+          if (!updated) return;
+
+          try {
+            const ref = doc(db, 'boards', boardId);
+            if (!isOnline()) {
+              usePendingQueue.getState().enqueue({
+                id: nanoid(),
+                type: 'UPDATE',
+                entity: 'board',
+                payload: updated,
+                timestamp: Date.now(),
+              });
+              return;
+            }
+            await updateDoc(ref, { members: updated.members, updatedAt });
+          } catch (error) {
+            console.error('[shareBoard] Firestore error:', error);
+          }
+        },
+
+        removeSharedMember: async (boardId, memberEmail) => {
+          const updatedAt = new Date().toISOString();
+          set((state) => ({
+            boards: state.boards.map((b) => {
+              if (b.id !== boardId) return b;
+              const updatedMembers = b.members.filter((m) => m.email !== memberEmail);
+              return { ...b, members: updatedMembers, updatedAt };
+            }),
+          }));
+
+          const updated = get().boards.find((b) => b.id === boardId);
+          if (!updated) return;
+
+          try {
+            const ref = doc(db, 'boards', boardId);
+            if (!isOnline()) {
+              usePendingQueue.getState().enqueue({
+                id: nanoid(),
+                type: 'UPDATE',
+                entity: 'board',
+                payload: updated,
+                timestamp: Date.now(),
+              });
+              return;
+            }
+            await updateDoc(ref, { members: updated.members, updatedAt });
+          } catch (error) {
+            console.error('[removeSharedMember] Firestore error:', error);
+          }
+        },
+
+        syncBoards: async (userEmail: string) => {
+          try {
+            const snap = await getDocs(collection(db, 'boards'));
+            const remoteBoards = snap.docs
               .map((doc) => ({ id: doc.id, ...doc.data() }) as Board)
-              .filter((b) => !b.deletedAt);
+              .filter((b) => !b.deletedAt && b.members?.some((m) => m.email === userEmail));
 
             set({ boards: remoteBoards });
-            console.info('[syncBoards] Synced from Firestore for user', userId, remoteBoards);
+            console.info('[syncBoards] Synced from Firestore for user', userEmail, remoteBoards);
 
             return remoteBoards;
           } catch (error) {

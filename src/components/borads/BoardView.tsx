@@ -11,7 +11,7 @@ export function BoardView() {
   }
 
   return (
-    <div className="p-6">
+    <div className="flex flex-col h-[calc(100vh-100px)] p-6">
       <h2 className="text-2xl font-bold mb-4 text-blue-600">{board.name}</h2>
       <ColumnList boardId={board?.id} />
     </div>

@@ -24,12 +24,16 @@ export function CardList({ boardId, columnId }: CardListProps) {
     [boardId, columnId, useCardsStore((s) => s.cards)]
   );
 
-  const { setNodeRef } = useDroppable({
+  const { setNodeRef, isOver } = useDroppable({
     id: columnId,
     data: {
       columnId,
     },
   });
+
+  const dropZoneClass = isOver
+    ? 'border-2 border-dashed border-blue-400 bg-blue-50 transition-all duration-200'
+    : 'border border-transparent transition-all duration-200';
 
   useEffect(() => {
     if (boardId && columnId && online) {
@@ -45,7 +49,10 @@ export function CardList({ boardId, columnId }: CardListProps) {
   };
 
   return (
-    <div ref={setNodeRef} className="flex justify-between items-center flex-col gap-3">
+    <div
+      ref={setNodeRef}
+      className={`flex justify-between items-center flex-col gap-3 p-2 rounded-md ${dropZoneClass}`}
+    >
       {cards.map((card) => (
         <DraggableCard
           key={card.id}

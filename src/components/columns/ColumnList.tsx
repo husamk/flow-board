@@ -7,8 +7,6 @@ import { Input } from '@/components/ui/input';
 import type { Column } from '@/types/column';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { useCardsStore } from '@/store/cards.ts';
-import type { Card as CardItem } from '@/types/card.ts';
-import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { usePendingQueue } from '@/store/pendingQueue.ts';
 import { Spinner } from '@/components/ui/spinner.tsx';
 
@@ -35,10 +33,6 @@ export function ColumnList({ boardId }: { boardId: string | undefined }) {
     const cols = useColumnsStore.getState().getActiveColumns(boardId);
     return cols.filter((c) => c.boardId === boardId);
   }, [boardId, useColumnsStore((s) => s.columns)]);
-  const cards: Record<string, CardItem[]> = useMemo(
-    () => useCardsStore.getState().getBoardCards(boardId),
-    [boardId, useCardsStore((s) => s.cards)]
-  );
 
   const handleAdd = () => {
     if (title.trim() && boardId) {
@@ -68,10 +62,10 @@ export function ColumnList({ boardId }: { boardId: string | undefined }) {
 
   return (
     <DndContext collisionDetection={closestCorners} onDragEnd={handleDragEnd}>
-      <div className="flex gap-4 overflow-x-auto p-2 relative">
+      <div className="flex gap-4 overflow-x-auto p-2 relative flex-1">
         {isFlushing && <Spinner />}
         {columns.map((col) => (
-          <div key={col.id} className="w-72 bg-gray-50 border rounded-lg p-3 flex-shrink-0">
+          <div key={col.id} className="w-72 h-full flex flex-col bg-gray-50 border rounded-lg p-3">
             {editingColumnId === col.id ? (
               <Input
                 value={editedTitle}
@@ -98,12 +92,7 @@ export function ColumnList({ boardId }: { boardId: string | undefined }) {
                 {col.title}
               </h3>
             )}
-            <SortableContext
-              items={(cards[col.id] as CardItem[] | [])?.map((c) => c.id) ?? []}
-              strategy={verticalListSortingStrategy}
-            >
-              <CardList boardId={col.boardId} columnId={col.id} />
-            </SortableContext>
+            <CardList boardId={col.boardId} columnId={col.id} />
           </div>
         ))}
 

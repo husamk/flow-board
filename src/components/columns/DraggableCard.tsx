@@ -27,7 +27,9 @@ export function DraggableCard({ card, onDelete }: { card: CardItem; onDelete: ()
       <div ref={setNodeRef} style={style} {...listeners} {...attributes}>
         <Card
           key={card.id}
-          className="w-full shadow-sm rounded-md bg-white border border-gray-200 hover:shadow-md transition-shadow"
+          className={`w-full rounded-md bg-white border border-gray-200 transition-all duration-150 ease-in-out
+            ${isDragging ? 'scale-105 shadow-xl z-50 rotate-[4deg]' : 'shadow-sm hover:shadow-md'}
+          `}
         >
           <CardHeader>
             <CardTitle className="text-sm font-semibold truncate">{card.title}</CardTitle>
@@ -38,15 +40,17 @@ export function DraggableCard({ card, onDelete }: { card: CardItem; onDelete: ()
         </Card>
       </div>
 
-      <Button
-        variant="ghost"
-        size="sm"
-        className="absolute top-1 right-1 pointer-events-auto text-sm text-red-500 hover:text-red-600 cursor-pointer z-10"
-        onClick={onDelete}
-        title="Delete card"
-      >
-        ×
-      </Button>
+      {!isDragging && (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="absolute top-1 right-1 pointer-events-auto text-sm text-red-500 hover:text-red-600 cursor-pointer z-10"
+          onClick={onDelete}
+          title="Delete card"
+        >
+          ×
+        </Button>
+      )}
     </div>
   );
 }

@@ -40,8 +40,13 @@ export function Board() {
     const activeColumnId = active.data.current?.columnId;
     const overColumnId = over.data.current?.columnId;
 
-    if (activeColumnId === overColumnId || !activeCardId || !overColumnId) return;
-    moveCard(boardId, activeColumnId, overColumnId, activeCardId);
+    if (!activeCardId || !overColumnId) return;
+
+    if (activeColumnId === overColumnId) {
+      console.log('TODO: handle same column drag');
+    } else {
+      moveCard(boardId, activeColumnId, overColumnId, activeCardId);
+    }
   };
 
   if (!board) {

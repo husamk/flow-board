@@ -110,7 +110,7 @@ export const useCardsStore = create<CardsState>()(
               id: nanoid(),
               type: 'MOVE',
               entity: 'card',
-              payload: { boardId, fromColumnId, toColumnId, cardId },
+              payload: { boardId, fromColumnId, toColumnId, id: cardId, data: movedCard },
               timestamp: Date.now(),
             });
             return;

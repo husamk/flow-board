@@ -116,7 +116,7 @@ async function handleCardAction(type: PendingActionType, payload: any) {
   const { db } = await import('@/lib/firebase');
   const { doc, setDoc, updateDoc, deleteDoc } = await import('firebase/firestore');
 
-  const { boardId, columnId, id, fromColumnId, toColumnId } = payload;
+  const { boardId, columnId, id, fromColumnId, toColumnId, data } = payload;
 
   if (type === 'ADD') {
     await setDoc(doc(db, 'boards', boardId, 'columns', columnId, 'cards', id), payload);
@@ -128,7 +128,7 @@ async function handleCardAction(type: PendingActionType, payload: any) {
     });
   } else if (type === 'MOVE') {
     await setDoc(doc(db, 'boards', boardId, 'columns', toColumnId, 'cards', id), {
-      ...payload,
+      ...data,
       columnId: toColumnId,
       updatedAt: new Date().toISOString(),
     });

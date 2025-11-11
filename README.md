@@ -1,73 +1,123 @@
-# React + TypeScript + Vite
+# Flow Board
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Flow Board is a lightweight collaborative task management app inspired by Trello. It supports offline usage, real-time synchronization across tabs, and persistence via Firebase Firestore.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 🚀 Features
 
-## React Compiler
+- **Offline-first:** Works seamlessly offline using localForage and syncs when online.
+- **Real-time Broadcast:** Changes propagate across open tabs instantly.
+- **Drag and Drop:** Organize cards and columns via smooth DnD interactions.
+- **Firebase Integration:** All boards, columns, and cards sync to Firestore.
+- **Role-based Sharing:** Share boards by email with `owner` or `editor` roles.
+- **Optimistic UI:** Instant UI updates even before Firestore confirmation.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the ESLint configuration
+## 🧰 Tech Stack
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- **Frontend:** React 18 + TypeScript + Vite
+- **State Management:** Zustand (with persist + localforage)
+- **Database:** Firebase Firestore
+- **UI Library:** Shadcn UI
+- **Build Tool:** Vite
+- **Testing:** Vitest + React Testing Library
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+---
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## 🧩 Project Structure
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```
+src/
+ ├─ components/      → UI Components (Header, Modals, Columns, Cards)
+ ├─ store/           → Zustand stores (boards, columns, cards, modals)
+ ├─ utils/           → Broadcast, Network helpers, PendingQueue
+ ├─ routes/           → Route-based views (Home, Board, SignIn)
+ ├─ lib/             → Firebase configuration
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+---
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## 🏃‍♂️ Run Locally
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### 1️⃣ Install dependencies
+
+```bash
+yarn install
 ```
+
+### 2️⃣ Start development server
+
+```bash
+yarn dev
+```
+
+App runs on [http://localhost:5173](http://localhost:5173)
+
+---
+
+## 🏗️ Build for Production
+
+```bash
+yarn build
+yarn preview
+```
+
+The production-ready build is served from `/dist`.
+
+---
+
+## 🧪 Testing
+
+Run unit and component tests using Vitest:
+
+```bash
+yarn test
+```
+
+To run tests in watch mode:
+
+```bash
+yarn test:watch
+```
+
+---
+
+## 🚀 Deploy
+
+Deployment can be done using Firebase Hosting or any static host:
+
+```bash
+yarn build
+firebase deploy
+```
+
+Or manually:
+
+- Upload `/dist` to Vercel, Netlify, or any static host.
+- Ensure `.env` includes your Firebase configuration keys.
+
+---
+
+## ⚖️ Trade-offs
+
+| Decision                    | Trade-off                                                                 |
+| --------------------------- | ------------------------------------------------------------------------- |
+| **Firestore + LocalForage** | Easy offline sync but added complexity managing merge conflicts.          |
+| **Zustand stores**          | Simpler and lightweight state vs Redux.                                   |
+| **BroadcastChannel**        | Great for local tab sync, but not for multi-user real-time updates.       |
+| **Vite**                    | Fast builds, but limited server-side rendering support.                   |
+| **Optimistic UI**           | Great UX but risk of temporary UI inconsistency if Firestore write fails. |
+
+---
+
+## 🧑‍💻 Development Notes
+
+- When offline, actions queue up and sync automatically once online.
+- Deletions use **soft delete** (`deletedAt` field) to enable archive/restore functionality.
+- `createdAt` and `updatedAt` fields are automatically populated by Firestore.
+- Firestore rules should be adjusted before production to restrict open writes.
+- Each board’s updates automatically bump `updatedAt` to support sorting and “Recently Updated.”
+
+---

@@ -1,7 +1,7 @@
 import { Route } from '@tanstack/react-router';
 import { rootRoute } from './rootRoute';
-import { BoardList } from '@/components/borads/BoardList';
-import { BoardView } from '@/components/borads/BoardView';
+import { Home } from '@/components/home/Home.tsx';
+import { Board } from '@/components/board/Board.tsx';
 import { ProtectedRoute } from '@/router/ProtectedRoute.tsx';
 import { SignIn } from '@/components/auth/SignIn';
 import { AppLayout } from '@/components/layout/AppLayout';
@@ -18,7 +18,7 @@ export const boardListRoute = new Route({
   component: () => (
     <AppLayout>
       <ProtectedRoute>
-        <BoardList />
+        <Home />
       </ProtectedRoute>
     </AppLayout>
   ),
@@ -30,7 +30,7 @@ export const boardViewRoute = new Route({
   component: () => (
     <AppLayout>
       <ProtectedRoute>
-        <BoardView />
+        <Board />
       </ProtectedRoute>
     </AppLayout>
   ),

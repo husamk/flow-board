@@ -21,7 +21,7 @@ export const AddColumn: React.FC<ColumnFooterProps> = ({ boardId }) => {
   };
 
   return (
-    <div className="w-72 h-auto flex-shrink-0 p-2 rounded-md bg-gray-50 border border-gray-200 shadow-sm hover:shadow-md transition-all">
+    <div className="w-72 h-auto flex-shrink-0 p-2 rounded-md bg-gray-50 border border-gray-200 shadow-sm hover:shadow-md transition-all mt-4">
       {!isAdding ? (
         <button
           onClick={() => setIsAdding(true)}

@@ -66,6 +66,8 @@ export const useColumnsStore = create<ColumnsState>()(
           try {
             const ref = doc(db, 'boards', boardId, 'columns', newColumn.id);
             await setDoc(ref, newColumn);
+            const boardRef = doc(db, 'boards', boardId);
+            await updateDoc(boardRef, { updatedAt: new Date().toISOString() });
           } catch (error) {
             console.error('[addColumn] Firestore error:', error);
           }
@@ -95,6 +97,8 @@ export const useColumnsStore = create<ColumnsState>()(
           try {
             const ref = doc(db, 'boards', boardId, 'columns', id);
             await updateDoc(ref, { ...updates, updatedAt });
+            const boardRef = doc(db, 'boards', boardId);
+            await updateDoc(boardRef, { updatedAt: new Date().toISOString() });
           } catch (error) {
             console.error('[updateColumn] Firestore error:', error);
           }
@@ -124,6 +128,8 @@ export const useColumnsStore = create<ColumnsState>()(
           try {
             const ref = doc(db, 'boards', boardId, 'columns', id);
             await updateDoc(ref, { deletedAt });
+            const boardRef = doc(db, 'boards', boardId);
+            await updateDoc(boardRef, { updatedAt: new Date().toISOString() });
           } catch (error) {
             console.error('[deleteColumn] Firestore error:', error);
           }
@@ -157,6 +163,8 @@ export const useColumnsStore = create<ColumnsState>()(
               updateDoc(doc(db, 'boards', boardId, 'columns', c.id), { deletedAt })
             );
             await Promise.all(batch);
+            const boardRef = doc(db, 'boards', boardId);
+            await updateDoc(boardRef, { updatedAt: new Date().toISOString() });
           } catch (error) {
             console.error('[deleteColumns] Firestore error:', error);
           }

@@ -3,13 +3,13 @@ import ConfirmationDialog from '@/components/common/ConfirmationDialog.tsx';
 import type { Card as CardItem } from '@/types/card.ts';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card.tsx';
 import Draggable from '@/components/dnd/Draggable.tsx';
-import { CardModal } from '@/components/card/CardModal.tsx';
 import { useCardsStore } from '@/store/cards.ts';
+import { useModalStore } from '@/store/modals.ts';
 
 export function InteractiveCard({ card }: { card: CardItem }) {
+  const { openCardModal } = useModalStore();
   const deleteCard = useCardsStore((s) => s.deleteCard);
 
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [openConfirm, setOpenConfirm] = useState(false);
 
   const handleDelete = () => {
@@ -26,7 +26,7 @@ export function InteractiveCard({ card }: { card: CardItem }) {
       <Draggable
         id={card.id}
         className="w-full"
-        onClick={() => setIsModalOpen(true)}
+        onClick={() => openCardModal(card.boardId, card.columnId, card.id)}
         onDelete={handleDelete}
       >
         <Card key={card.id} className="cursor-pointer hover:shadow-md transition-shadow">
@@ -46,7 +46,6 @@ export function InteractiveCard({ card }: { card: CardItem }) {
         actionText="Delete"
         onConfirm={confirmDelete}
       />
-      {isModalOpen && <CardModal card={card} onClose={() => setIsModalOpen(false)} />}
     </div>
   );
 }

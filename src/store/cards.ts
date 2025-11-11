@@ -12,6 +12,7 @@ interface CardsState {
   cards: Record<string, Record<string, Card[]>>;
   getActiveCards: (boardId: string, columnId: string) => Card[];
   getBoardCards: (boardId: string) => Record<string, Card[]>;
+  getCardById: (boardId: string, columnId: string, id: string) => Card | undefined;
   moveCard: (boardId: string, fromColumnId: string, toColumnId: string, cardId: string) => void;
   addCard: (
     boardId: string,
@@ -55,6 +56,14 @@ export const useCardsStore = create<CardsState>()(
             },
             {} as Record<string, Card[]>
           );
+        },
+
+        getCardById: (boardId, columnId, id) => {
+          const board = get().cards[boardId];
+          if (!board) return undefined;
+          const columnCards = board[columnId];
+          if (!columnCards) return undefined;
+          return columnCards.find((c) => c.id === id);
         },
 
         moveCard: async (boardId, fromColumnId, toColumnId, cardId) => {
@@ -114,6 +123,9 @@ export const useCardsStore = create<CardsState>()(
 
             const fromRef = doc(db, 'boards', boardId, 'columns', fromColumnId, 'cards', cardId);
             await deleteDoc(fromRef);
+
+            const boardRef = doc(db, 'boards', boardId);
+            await updateDoc(boardRef, { updatedAt: new Date().toISOString() });
           } catch (error) {
             console.error('[moveCard] Firestore error:', error);
           }
@@ -155,6 +167,9 @@ export const useCardsStore = create<CardsState>()(
           try {
             const ref = doc(db, 'boards', boardId, 'columns', columnId, 'cards', newCard.id);
             await setDoc(ref, newCard);
+
+            const boardRef = doc(db, 'boards', boardId);
+            await updateDoc(boardRef, { updatedAt: new Date().toISOString() });
           } catch (error) {
             console.error('[addCard] Firestore error:', error);
           }
@@ -189,6 +204,9 @@ export const useCardsStore = create<CardsState>()(
           try {
             const ref = doc(db, 'boards', boardId, 'columns', columnId, 'cards', id);
             await updateDoc(ref, { title, description, updatedAt });
+
+            const boardRef = doc(db, 'boards', boardId);
+            await updateDoc(boardRef, { updatedAt: new Date().toISOString() });
           } catch (error) {
             console.error('[updateCard] Firestore error:', error);
           }
@@ -221,6 +239,9 @@ export const useCardsStore = create<CardsState>()(
           try {
             const ref = doc(db, 'boards', boardId, 'columns', columnId, 'cards', id);
             await updateDoc(ref, { deletedAt });
+
+            const boardRef = doc(db, 'boards', boardId);
+            await updateDoc(boardRef, { updatedAt: new Date().toISOString() });
           } catch (error) {
             console.error('[deleteCard] Firestore error:', error);
           }
@@ -259,6 +280,9 @@ export const useCardsStore = create<CardsState>()(
               })
             );
             await Promise.all(batch);
+
+            const boardRef = doc(db, 'boards', boardId);
+            await updateDoc(boardRef, { updatedAt: new Date().toISOString() });
           } catch (error) {
             console.error('[deleteCards] Firestore error:', error);
           }

@@ -24,10 +24,9 @@ export const Draggable: React.FC<DraggableProps> = ({
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.85 : 1,
-    rotate: isDragging ? '5deg' : '0deg',
+    rotate: isDragging ? '3deg' : '0deg',
     zIndex: isDragging ? 999 : 'auto',
-    cursor: 'grab',
+    cursor: isDragging ? 'grabbing' : 'grab',
     boxShadow: isDragging ? '0 6px 16px rgba(0, 0, 0, 0.2)' : 'none',
   } as React.CSSProperties;
 

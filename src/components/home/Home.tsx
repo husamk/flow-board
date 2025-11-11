@@ -33,7 +33,7 @@ export function Home() {
       .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
       .slice(0, 2);
     const shared = boards.filter((b) => b.ownerId !== user?.uid);
-    const workspace = boards.filter((b) => !shared.includes(b) && !recent.includes(b));
+    const workspace = boards.filter((b) => !shared.includes(b));
 
     return { recent, shared, workspace };
   }, [boards, user]);

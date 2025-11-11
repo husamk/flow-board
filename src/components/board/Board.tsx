@@ -13,9 +13,14 @@ import {
 import { useState } from 'react';
 import { useCardsStore } from '@/store/cards.ts';
 import BoardHeader from '@/components/board/BoardHeader.tsx';
+import { CardModal } from '@/components/card/CardModal.tsx';
+import { useModalStore } from '@/store/modals.ts';
 
 export function Board() {
   const { boardId } = useParams({ from: '/boards/$boardId' });
+  const {
+    cardModal: { isOpen: isModalOpen },
+  } = useModalStore();
   const board = useBoardsStore((s) => s.boards.find((b) => b.id === boardId));
   const moveCard = useCardsStore((s) => s.moveCard);
 
@@ -38,19 +43,22 @@ export function Board() {
   const handleDragOver = (event: DragOverEvent) => {
     const { active, over } = event;
     if (!over) return;
-    console.log(`Dragging ${active.id} over ${over.id}`);
+    // console.log('Active', active);
+    // console.log('Over', over);
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over) return;
 
-    const activeCardId = active.data.current?.cardId;
-    const activeColumnId = active.data.current?.columnId;
-    const overColumnId = over.data.current?.columnId;
-
-    if (activeColumnId === overColumnId || !activeCardId || !overColumnId) return;
-    moveCard(boardId, activeColumnId, overColumnId, activeCardId);
+    console.log('Active', active);
+    console.log('Over', over);
+    // const activeCardId = active.data.current?.cardId;
+    // const activeColumnId = active.data.current?.columnId;
+    // const overColumnId = over.data.current?.columnId;
+    //
+    // if (activeColumnId === overColumnId || !activeCardId || !overColumnId) return;
+    // moveCard(boardId, activeColumnId, overColumnId, activeCardId);
 
     setActiveId(null);
   };
@@ -71,6 +79,7 @@ export function Board() {
       >
         <BoardContent boardId={board.id} />
       </DndContext>
+      {isModalOpen && <CardModal />}
     </div>
   );
 }

@@ -1,12 +1,13 @@
 import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
+import { createJSONStorage, persist } from 'zustand/middleware';
 import localforage from 'localforage';
 import type { Card } from '@/types/card';
 import { nanoid } from 'nanoid';
 import { db } from '@/lib/firebase';
-import { collection, doc, updateDoc, getDocs, setDoc, deleteDoc } from 'firebase/firestore';
+import { collection, deleteDoc, doc, getDocs, setDoc, updateDoc } from 'firebase/firestore';
 import { usePendingQueue } from '@/store/pendingQueue';
 import { isOnline } from '@/utils/network';
+import { type BroadcastMessage, broadcastUpdate } from '@/utils/broadcast';
 
 interface CardsState {
   cards: Record<string, Record<string, Card[]>>;
@@ -30,6 +31,7 @@ interface CardsState {
   deleteCard: (id: string, boardId: string, columnId: string) => Promise<void>;
   deleteCards: (boardId: string, columnId: string) => Promise<void>;
   syncCards: (boardId: string, columnId: string) => Promise<void>;
+  handleBroadcastMessage: (message: BroadcastMessage) => void;
 }
 
 export const useCardsStore = create<CardsState>()(
@@ -105,6 +107,14 @@ export const useCardsStore = create<CardsState>()(
             };
           });
 
+          broadcastUpdate('move', 'card', {
+            boardId,
+            fromColumnId,
+            toColumnId,
+            cardId,
+            movedCard,
+          });
+
           if (!isOnline()) {
             enqueue({
               id: nanoid(),
@@ -153,6 +163,8 @@ export const useCardsStore = create<CardsState>()(
             },
           }));
 
+          broadcastUpdate('add', 'card', newCard);
+
           if (!isOnline()) {
             enqueue({
               id: nanoid(),
@@ -190,6 +202,15 @@ export const useCardsStore = create<CardsState>()(
             },
           });
 
+          broadcastUpdate('update', 'card', {
+            id,
+            boardId,
+            columnId,
+            title,
+            description,
+            updatedAt,
+          });
+
           if (!isOnline()) {
             enqueue({
               id: nanoid(),
@@ -225,6 +246,13 @@ export const useCardsStore = create<CardsState>()(
             },
           });
 
+          broadcastUpdate('delete', 'card', {
+            id,
+            boardId,
+            columnId,
+            deletedAt,
+          });
+
           if (!isOnline()) {
             enqueue({
               id: nanoid(),
@@ -258,6 +286,13 @@ export const useCardsStore = create<CardsState>()(
               ...cardsObj,
               [boardId]: { ...cardsObj[boardId], [columnId]: updatedCards },
             },
+          });
+
+          broadcastUpdate('delete-all', 'card', {
+            boardId,
+            columnId,
+            deletedAt,
+            cardIds: columnCards.map((c) => c.id),
           });
 
           if (!isOnline()) {
@@ -306,6 +341,89 @@ export const useCardsStore = create<CardsState>()(
           } catch (error) {
             console.error('[syncCards] Failed:', error);
           }
+        },
+
+        handleBroadcastMessage: (msg: BroadcastMessage) => {
+          if (msg.entity !== 'card') return;
+
+          set((state) => {
+            const cards = { ...state.cards };
+
+            switch (msg.type) {
+              case 'add': {
+                const c: Card = msg.payload;
+                const columnCards = cards[c.boardId]?.[c.columnId] ?? [];
+                cards[c.boardId] = {
+                  ...cards[c.boardId],
+                  [c.columnId]: [...columnCards, c],
+                };
+                break;
+              }
+
+              case 'update': {
+                const c: Card = msg.payload;
+                const columnCards = cards[c.boardId]?.[c.columnId] ?? [];
+                cards[c.boardId] = {
+                  ...cards[c.boardId],
+                  [c.columnId]: columnCards.map((card) =>
+                    card.id === c.id ? { ...card, ...c } : card
+                  ),
+                };
+                break;
+              }
+
+              case 'delete': {
+                const c: Card = msg.payload;
+                const columnCards = cards[c.boardId]?.[c.columnId] ?? [];
+                cards[c.boardId] = {
+                  ...cards[c.boardId],
+                  [c.columnId]: columnCards.map((card) =>
+                    card.id === c.id ? { ...card, deletedAt: c.deletedAt } : card
+                  ),
+                };
+                break;
+              }
+
+              case 'move': {
+                const { boardId, fromColumnId, toColumnId, movedCard } = msg.payload;
+                if (!boardId || !fromColumnId || !toColumnId || !movedCard) break;
+
+                const boardCards = cards[boardId] ?? {};
+                const fromCards = boardCards[fromColumnId] ?? [];
+                const toCards = boardCards[toColumnId] ?? [];
+
+                const updatedFrom = fromCards.filter((c) => c.id !== movedCard.id);
+                const updatedTo = [...toCards, movedCard];
+
+                cards[boardId] = {
+                  ...boardCards,
+                  [fromColumnId]: updatedFrom,
+                  [toColumnId]: updatedTo,
+                };
+                break;
+              }
+
+              case 'delete-all': {
+                const { boardId, columnId, deletedAt, cardIds } = msg.payload;
+                const boardCards = cards[boardId] ?? {};
+                const columnCards = boardCards[columnId] ?? [];
+                const updatedCards = columnCards.map((c) =>
+                  cardIds.includes(c.id) ? { ...c, deletedAt } : c
+                );
+
+                cards[boardId] = {
+                  ...boardCards,
+                  [columnId]: updatedCards,
+                };
+                break;
+              }
+
+              default:
+                break;
+            }
+
+            return { cards };
+          });
         },
       };
     },

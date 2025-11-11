@@ -7,6 +7,7 @@ import { db } from '@/lib/firebase';
 import { collection, doc, getDocs, updateDoc, setDoc } from 'firebase/firestore';
 import { usePendingQueue } from '@/store/pendingQueue';
 import { isOnline } from '@/utils/network';
+import { type BroadcastMessage, broadcastUpdate } from '@/utils/broadcast';
 
 interface ColumnsState {
   columns: Record<string, Column[]>;
@@ -16,6 +17,7 @@ interface ColumnsState {
   deleteColumn: (boardId: string, id: string) => Promise<void>;
   deleteColumns: (boardId: string) => Promise<void>;
   syncColumns: (boardId: string) => Promise<void>;
+  handleBroadcastMessage: (msg: BroadcastMessage) => void;
 }
 
 export const useColumnsStore = create<ColumnsState>()(
@@ -52,6 +54,8 @@ export const useColumnsStore = create<ColumnsState>()(
             },
           }));
 
+          broadcastUpdate('add', 'column', newColumn);
+
           if (!isOnline()) {
             enqueue({
               id: nanoid(),
@@ -82,6 +86,8 @@ export const useColumnsStore = create<ColumnsState>()(
           set({
             columns: { ...columnsObj, [boardId]: updatedCols },
           });
+
+          broadcastUpdate('update', 'column', { boardId, id, ...updates });
 
           if (!isOnline()) {
             enqueue({
@@ -114,6 +120,8 @@ export const useColumnsStore = create<ColumnsState>()(
             columns: { ...columnsObj, [boardId]: updatedCols },
           });
 
+          broadcastUpdate('delete', 'column', { boardId, id, deletedAt });
+
           if (!isOnline()) {
             enqueue({
               id: nanoid(),
@@ -144,6 +152,8 @@ export const useColumnsStore = create<ColumnsState>()(
           set({
             columns: { ...columnsObj, [boardId]: updatedCols },
           });
+
+          broadcastUpdate('delete-all', 'column', { boardId, deletedAt });
 
           if (!isOnline()) {
             cols.forEach((c) => {
@@ -185,6 +195,49 @@ export const useColumnsStore = create<ColumnsState>()(
           } catch (error) {
             console.error('[syncColumns] Failed:', error);
           }
+        },
+
+        handleBroadcastMessage: (msg: BroadcastMessage) => {
+          if (msg.entity !== 'column') return;
+
+          set((state) => {
+            const columns = { ...state.columns };
+
+            switch (msg.type) {
+              case 'add': {
+                const c: Column = msg.payload;
+                const boardCols = columns[c.boardId] ?? [];
+                columns[c.boardId] = [...boardCols, c];
+                break;
+              }
+              case 'update': {
+                const c: Column = msg.payload;
+                const boardCols = columns[c.boardId] ?? [];
+                columns[c.boardId] = boardCols.map((col) =>
+                  col.id === c.id ? { ...col, ...c } : col
+                );
+                break;
+              }
+              case 'delete': {
+                const c: Column = msg.payload;
+                const boardCols = columns[c.boardId] ?? [];
+                columns[c.boardId] = boardCols.map((col) =>
+                  col.id === c.id ? { ...col, deletedAt: c.deletedAt } : col
+                );
+                break;
+              }
+              case 'delete-all': {
+                const { boardId, deletedAt } = msg.payload;
+                const boardCols = columns[boardId] ?? [];
+                columns[boardId] = boardCols.map((col) => ({ ...col, deletedAt }));
+                break;
+              }
+              default:
+                break;
+            }
+
+            return { columns };
+          });
         },
       };
     },

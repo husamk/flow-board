@@ -4,9 +4,10 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 import localforage from 'localforage';
 import type { Board } from '@/types/board';
 import { db } from '@/lib/firebase';
-import { collection, doc, getDocs, updateDoc, setDoc, query, where } from 'firebase/firestore';
+import { collection, doc, getDocs, setDoc, updateDoc } from 'firebase/firestore';
 import { usePendingQueue } from '@/store/pendingQueue';
 import { isOnline } from '@/utils/network';
+import { type BroadcastMessage, broadcastUpdate } from '@/utils/broadcast';
 
 interface BoardsState {
   boards: Board[];
@@ -17,6 +18,7 @@ interface BoardsState {
   shareBoard: (boardId: string, memberEmail: string, role: 'editor' | 'owner') => Promise<void>;
   removeSharedMember: (boardId: string, memberEmail: string) => Promise<void>;
   syncBoards: (userEmail: string) => Promise<Board[]>;
+  handleBroadcastMessage: (msg: BroadcastMessage) => void;
 }
 
 export const useBoardsStore = create<BoardsState>()(
@@ -42,8 +44,8 @@ export const useBoardsStore = create<BoardsState>()(
             updatedAt: new Date().toISOString(),
           };
 
-          // Update local state first (optimistic UI)
           set((state) => ({ boards: [...state.boards, newBoard] }));
+          broadcastUpdate('add', 'board', newBoard);
 
           try {
             if (!isOnline()) {
@@ -68,6 +70,7 @@ export const useBoardsStore = create<BoardsState>()(
           set((state) => ({
             boards: state.boards.map((b) => (b.id === id ? { ...b, name, updatedAt } : b)),
           }));
+          broadcastUpdate('update', 'board', { id, name, updatedAt });
 
           const updated = get().boards.find((b) => b.id === id);
           if (!updated) return;
@@ -95,6 +98,7 @@ export const useBoardsStore = create<BoardsState>()(
           set((state) => ({
             boards: state.boards.map((b) => (b.id === id ? { ...b, deletedAt } : b)),
           }));
+          broadcastUpdate('delete', 'board', { id });
 
           const deleted = get().boards.find((b) => b.id === id);
           if (!deleted) return;
@@ -136,6 +140,7 @@ export const useBoardsStore = create<BoardsState>()(
 
           const updated = get().boards.find((b) => b.id === boardId);
           if (!updated) return;
+          broadcastUpdate('update', 'board', updated);
 
           try {
             const ref = doc(db, 'boards', boardId);
@@ -167,6 +172,7 @@ export const useBoardsStore = create<BoardsState>()(
 
           const updated = get().boards.find((b) => b.id === boardId);
           if (!updated) return;
+          broadcastUpdate('update', 'board', updated);
 
           try {
             const ref = doc(db, 'boards', boardId);
@@ -201,6 +207,32 @@ export const useBoardsStore = create<BoardsState>()(
             console.error('[syncBoards] Failed:', error);
             return [];
           }
+        },
+
+        handleBroadcastMessage: (msg: BroadcastMessage) => {
+          if (msg.entity !== 'board') return;
+
+          set((state) => {
+            let updatedBoards = [...state.boards];
+
+            switch (msg.type) {
+              case 'add':
+                updatedBoards.push(msg.payload);
+                break;
+              case 'update':
+                updatedBoards = updatedBoards.map((b) =>
+                  b.id === msg.payload.id ? { ...b, ...msg.payload } : b
+                );
+                break;
+              case 'delete':
+                updatedBoards = updatedBoards.filter((b) => b.id !== msg.payload.id);
+                break;
+              default:
+                break;
+            }
+
+            return { boards: updatedBoards };
+          });
         },
       };
     },

@@ -4,7 +4,7 @@ Flow Board is a lightweight collaborative task management app inspired by Trello
 
 ---
 
-## 🚀 Features
+## Features
 
 - **Offline-first:** Works seamlessly offline using localForage and syncs when online.
 - **Real-time Broadcast:** Changes propagate across open tabs instantly.
@@ -15,7 +15,7 @@ Flow Board is a lightweight collaborative task management app inspired by Trello
 
 ---
 
-## 🧰 Tech Stack
+## Tech Stack
 
 - **Frontend:** React 18 + TypeScript + Vite
 - **State Management:** Zustand (with persist + localforage)
@@ -26,7 +26,7 @@ Flow Board is a lightweight collaborative task management app inspired by Trello
 
 ---
 
-## 🧩 Project Structure
+## Project Structure
 
 ```
 src/
@@ -39,7 +39,7 @@ src/
 
 ---
 
-## 🏃‍♂️ Run Locally
+## Run Locally
 
 ### 1️⃣ Install dependencies
 
@@ -57,7 +57,7 @@ App runs on [http://localhost:5173](http://localhost:5173)
 
 ---
 
-## 🏗️ Build for Production
+## Build for Production
 
 ```bash
 yarn build
@@ -68,7 +68,7 @@ The production-ready build is served from `/dist`.
 
 ---
 
-## 🧪 Testing
+## Testing
 
 Run unit and component tests using Vitest:
 
@@ -84,7 +84,7 @@ yarn test:watch
 
 ---
 
-## 🚀 Deploy
+## Deploy
 
 Deployment can be done using Firebase Hosting or any static host:
 
@@ -100,7 +100,7 @@ Or manually:
 
 ---
 
-## ⚖️ Trade-offs
+## Trade-offs
 
 | Decision                    | Trade-off                                                                 |
 | --------------------------- | ------------------------------------------------------------------------- |
@@ -112,7 +112,7 @@ Or manually:
 
 ---
 
-## 🧑‍💻 Development Notes
+## Development Notes
 
 - When offline, actions queue up and sync automatically once online.
 - Deletions use **soft delete** (`deletedAt` field) to enable archive/restore functionality.

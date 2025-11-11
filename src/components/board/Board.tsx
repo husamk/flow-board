@@ -1,16 +1,15 @@
 import { useParams } from '@tanstack/react-router';
 import { useBoardsStore } from '@/store/boards';
 import { BoardContent } from '@/components/board/BoardContent.tsx';
-import { type DragEndEvent, type DragOverEvent, type DragStartEvent } from '@dnd-kit/core';
 import {
   closestCenter,
   DndContext,
+  type DragEndEvent,
   KeyboardSensor,
   PointerSensor,
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
-import { useState } from 'react';
 import { useCardsStore } from '@/store/cards.ts';
 import BoardHeader from '@/components/board/BoardHeader.tsx';
 import { CardModal } from '@/components/card/CardModal.tsx';
@@ -24,7 +23,6 @@ export function Board() {
   const board = useBoardsStore((s) => s.boards.find((b) => b.id === boardId));
   const moveCard = useCardsStore((s) => s.moveCard);
 
-  const [activeId, setActiveId] = useState<string | number | null>(null);
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -34,33 +32,16 @@ export function Board() {
     useSensor(KeyboardSensor)
   );
 
-  const handleDragStart = (event: DragStartEvent) => {
-    const { active } = event;
-    console.log('Drag started:', active.id);
-    setActiveId(active.id);
-  };
-
-  const handleDragOver = (event: DragOverEvent) => {
-    const { active, over } = event;
-    if (!over) return;
-    // console.log('Active', active);
-    // console.log('Over', over);
-  };
-
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (!over) return;
 
-    console.log('Active', active);
-    console.log('Over', over);
-    // const activeCardId = active.data.current?.cardId;
-    // const activeColumnId = active.data.current?.columnId;
-    // const overColumnId = over.data.current?.columnId;
-    //
-    // if (activeColumnId === overColumnId || !activeCardId || !overColumnId) return;
-    // moveCard(boardId, activeColumnId, overColumnId, activeCardId);
+    const activeCardId = active.id;
+    const activeColumnId = active.data.current?.columnId;
+    const overColumnId = over.data.current?.columnId;
 
-    setActiveId(null);
+    if (activeColumnId === overColumnId || !activeCardId || !overColumnId) return;
+    moveCard(boardId, activeColumnId, overColumnId, activeCardId);
   };
 
   if (!board) {
@@ -70,13 +51,7 @@ export function Board() {
   return (
     <div className="flex flex-col p-6">
       <BoardHeader board={board} />
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragStart={handleDragStart}
-        onDragOver={handleDragOver}
-        onDragEnd={handleDragEnd}
-      >
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <BoardContent boardId={board.id} />
       </DndContext>
       {isModalOpen && <CardModal />}

@@ -3,7 +3,7 @@ import { useColumnsStore } from '@/store/columns.ts';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus.ts';
 import { useCardsStore } from '@/store/cards.ts';
 import type { Card as CardItem } from '@/types/card.ts';
-import { rectSortingStrategy, SortableContext } from '@dnd-kit/sortable';
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import type { Column } from '@/types/column.ts';
 import { ColumnWrapper } from '../column/ColumnWrapper.tsx';
 import AddColumn from '@/components/column/AddColumn.tsx';
@@ -34,7 +34,7 @@ export function BoardContent({ boardId }: { boardId: string | undefined }) {
 
   return (
     <div className="flex overflow-x-auto p-2 relative flex-1">
-      <SortableContext items={allCardIds} strategy={rectSortingStrategy}>
+      <SortableContext items={allCardIds} strategy={verticalListSortingStrategy}>
         <div className="flex gap-4 items-start">
           {columns.map((col) => (
             <ColumnWrapper key={col.id} col={col} boardId={boardId} />

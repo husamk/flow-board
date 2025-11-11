@@ -1,9 +1,10 @@
 import React from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import type { Card } from '@/types/card.ts';
 
 interface DraggableProps {
-  id: string;
+  item: Card;
   children: React.ReactNode;
   className?: string;
   onClick?: (event: React.MouseEvent<HTMLDivElement>) => void;
@@ -11,14 +12,18 @@ interface DraggableProps {
 }
 
 export const Draggable: React.FC<DraggableProps> = ({
-  id,
+  item,
   children,
   className = '',
   onClick,
   onDelete = () => {},
 }) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id,
+    id: item.id,
+    data: {
+      cardId: item.id,
+      columnId: item.columnId,
+    },
   });
 
   const style = {
@@ -49,7 +54,7 @@ export const Draggable: React.FC<DraggableProps> = ({
         {...listeners}
         {...attributes}
         style={style}
-        className={`relative ${className}`}
+        className={className}
         onClick={onClick}
       >
         {children}

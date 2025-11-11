@@ -12,7 +12,7 @@ export const DroppableContainer: React.FC<DroppableContainerProps> = ({
   children,
   className = '',
 }) => {
-  const { isOver, setNodeRef } = useDroppable({ id });
+  const { isOver, setNodeRef } = useDroppable({ id, data: { columnId: id } });
 
   return (
     <div

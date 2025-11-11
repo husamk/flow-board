@@ -24,7 +24,7 @@ export function InteractiveCard({ card }: { card: CardItem }) {
   return (
     <div className="relative w-full">
       <Draggable
-        id={card.id}
+        item={card}
         className="w-full"
         onClick={() => openCardModal(card.boardId, card.columnId, card.id)}
         onDelete={handleDelete}

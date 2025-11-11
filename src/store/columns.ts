@@ -17,7 +17,7 @@ interface ColumnsState {
   deleteColumn: (boardId: string, id: string) => Promise<void>;
   deleteColumns: (boardId: string) => Promise<void>;
   syncColumns: (boardId: string) => Promise<void>;
-  handleBroadcastMessage: (msg: BroadcastMessage) => void;
+  handleBroadcastMessage: (msg: Partial<BroadcastMessage>) => void;
 }
 
 export const useColumnsStore = create<ColumnsState>()(
@@ -197,7 +197,7 @@ export const useColumnsStore = create<ColumnsState>()(
           }
         },
 
-        handleBroadcastMessage: (msg: BroadcastMessage) => {
+        handleBroadcastMessage: (msg: Partial<BroadcastMessage>) => {
           if (msg.entity !== 'column') return;
 
           set((state) => {

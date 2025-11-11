@@ -31,7 +31,7 @@ interface CardsState {
   deleteCard: (id: string, boardId: string, columnId: string) => Promise<void>;
   deleteCards: (boardId: string, columnId: string) => Promise<void>;
   syncCards: (boardId: string, columnId: string) => Promise<void>;
-  handleBroadcastMessage: (message: BroadcastMessage) => void;
+  handleBroadcastMessage: (message: Partial<BroadcastMessage>) => void;
 }
 
 export const useCardsStore = create<CardsState>()(
@@ -343,7 +343,7 @@ export const useCardsStore = create<CardsState>()(
           }
         },
 
-        handleBroadcastMessage: (msg: BroadcastMessage) => {
+        handleBroadcastMessage: (msg: Partial<BroadcastMessage>) => {
           if (msg.entity !== 'card') return;
 
           set((state) => {

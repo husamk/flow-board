@@ -18,7 +18,7 @@ interface BoardsState {
   shareBoard: (boardId: string, memberEmail: string, role: 'editor' | 'owner') => Promise<void>;
   removeSharedMember: (boardId: string, memberEmail: string) => Promise<void>;
   syncBoards: (userEmail: string) => Promise<Board[]>;
-  handleBroadcastMessage: (msg: BroadcastMessage) => void;
+  handleBroadcastMessage: (msg: Partial<BroadcastMessage>) => void;
 }
 
 export const useBoardsStore = create<BoardsState>()(
@@ -209,7 +209,7 @@ export const useBoardsStore = create<BoardsState>()(
           }
         },
 
-        handleBroadcastMessage: (msg: BroadcastMessage) => {
+        handleBroadcastMessage: (msg: Partial<BroadcastMessage>) => {
           if (msg.entity !== 'board') return;
 
           set((state) => {
